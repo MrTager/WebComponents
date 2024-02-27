@@ -5,6 +5,7 @@ const uploadFile = (e: any) => {
   if(!file) return;
   console.log(createChunk(file));
   //多线程分片
+  
 }
 
 const createChunk = (file: any) => {
