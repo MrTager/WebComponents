@@ -12,38 +12,36 @@ const createChunk = (file: any) => {
   const chunkCount = Math.ceil(file.size / chunkSize);
   //获取CPU核心个数
   let threadCount = navigator.hardwareConcurrency || 4;
-  let startIndex = 0;
-  let endIndex = 0;
-  if(threadCount > chunkCount){
-    threadCount = Math.ceil(chunkCount/threadCount);
-  }
+  let threadChunkCount = Math.ceil(chunkCount/threadCount);
+  
   for (let i = 0; i < threadCount; i++) {
     //创建线程
-    const thread = new Worker('./worker.js',{
+    const thread = new Worker('../public/worker.js',{
       type: 'module'
     });
-    //当前分片起始位置
-    if((i+1)*(chunkCount/threadCount) < chunkCount){
-      endIndex = startIndex + Math.ceil((chunkCount/threadCount)) - 1;
-    }else{
-      endIndex = chunkCount - 1;
-    }
+    
+    // //当前分片起始位置
+    // if((i+1)*(chunkCount/threadCount) < chunkCount){
+    //   endIndex = startIndex + Math.ceil((chunkCount/threadCount)) - 1;
+    // }else{
+    //   endIndex = chunkCount - 1;
+    // }
     
     console.log("============================================")
     console.log("分片个数",chunkCount)
     console.log("核心个数",threadCount)
-    console.log("当前线程分片开始位置",startIndex,"结束位置",endIndex)
+    // console.log("当前线程分片开始位置",startIndex,"结束位置",endIndex)
 
     thread.postMessage({
       file,
       chunkSize,
-      startIndex,
-      endIndex
+      startIndex:i*threadChunkCount,
+      endIndex:Math.min((i+1)*threadChunkCount-1,chunkCount-1)
     });
     thread.onmessage = (e: any) => {
-      console.log(e.data);
+      // console.log(e.data);
     }
-    startIndex = endIndex + 1;
+    // startIndex = endIndex + 1;
   }
 
 }
