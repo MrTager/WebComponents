@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // import SparkMD5 from "spark-md5";
+import { ConcurrencyControlFunc } from "./utils/ConcurrencyControl.js";
 const uploadFile = (e: any) => {
   const file = e.target.files[0];
   if (!file) return;
@@ -19,7 +20,6 @@ const uploadFile = (e: any) => {
 const createChunk = (file: any) => {
   /**每一小片的大小 */
   const chunkSize = 1024 * 1024 * 3;
-  console.log("分片大小", chunkSize);
   /**总共分成的小片数量 */
   const chunkCount = Math.ceil(file.size / chunkSize);
   /**获取CPU核心个数 */
@@ -51,7 +51,7 @@ const createChunk = (file: any) => {
       ),
     });
     /**线程通信 通信结束销毁线程 */
-    thread.onmessage = (e: any) => {
+    thread.onmessage = async (e: any) => {
       responseCount++;
       e.data.forEach((it: any) => {
         result[it.index] = it;
@@ -59,6 +59,23 @@ const createChunk = (file: any) => {
       if (responseCount !== threadCount) return;
       /**最终的分片结果 */
       console.log("最终result", result);
+      /**发送请求 */
+      let fetchArr = result.map((it: any) => {
+        console.log("it111", it);
+        const { index, start, hash, end, blob } = it;
+        let formData = new FormData();
+        formData.append("index", index);
+        formData.append("start", start);
+        formData.append("hash", hash);
+        formData.append("end", end);
+        formData.append("blob", blob);
+        return fetch("http://localhost:3000/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+      });
+      const res = await ConcurrencyControlFunc(10, fetchArr);
+      console.log("返回结果res", res);
     };
   }
 };
