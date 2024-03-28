@@ -8,14 +8,17 @@
 </head>
 
 <body>
-
-    <div style="position: relative;width: 500px;height: 500px;">
-        <canvas id="canvas" width="500" height="500" style="background-color: #ddd;">
+    <div style="position: relative;width: 500px;height: 300px;">
+        <canvas id="canvas" width="500" height="300" style="background-color: #ddd;">
     </div>
+   
     <div style="position: relative; top: 30px;">
         <button id="reset">重写</button>
-        <button>上一步</button>
-        <button>确认</button>
+        <button id="backStep">上一步</button>
+        <button id="save">保存</button>
+    </div>
+    <div style="position: relative;width: 500px;width: 500px;top: 30px;">
+        <canvas id="canvas2" width="500" height="500" style="background-color: #ddd;"></canvas>
     </div>
 
 </body>
@@ -23,9 +26,17 @@
     window.onload = function () {
         let canvas = document.getElementById("canvas");
         let ctx = canvas.getContext("2d");
+
+
+        let canvas2 = document.getElementById("canvas2");
+        let ctx2 = canvas2.getContext("2d");
+
+
+
         let isTouching = false;
         let lastX = 0;
         let lastY = 0;
+        let history = [];
         function drawLine(x, y) {
             if (isTouching) {
                 ctx.beginPath();
@@ -43,6 +54,7 @@
         });
         canvas.addEventListener("mouseup", function (e) {
             isTouching = false;
+            history.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
         });
         canvas.addEventListener("mousemove", function (e) {
             if (isTouching) {
@@ -63,11 +75,53 @@
                 drawLine(e.touches[0].offsetX, e.touches[0].offsetY);
             }
         });
-
-
-        document.getElementById("reset").click(function () {
+        document.getElementById("reset").addEventListener("click", function () {
+            //清空画布
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            history = [];
         });
+        //撤回上一步
+        document.getElementById("backStep").addEventListener("click", function () {
+            console.log(history);
+            if (history.length > 0) {
+                //取出上一步的图片
+                history.pop();
+                let lastStep = history[history.length-1];
+                //重绘
+                if(lastStep){
+                    ctx.putImageData(lastStep, 0, 0);
+                }else{
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    history = [];
+                }
+            }
+        });
+        //点保存后将图片缩小4倍插入到canvas2上，并且可以拖动插入的图片，还能有放大缩小的边框支持手动调整
+        document.getElementById("save").addEventListener("click", function () {
+            // let img = canvas.toDataURL("image/png");
+            // if (img) {
+            //     let a = document.createElement("a");
+            //     a.href = img;
+            //     a.download = "画板.png";
+            //     a.click();
+            // }
+
+            ctx2.setLineDash([20, 5]);  // [实线长度, 间隙长度]
+            ctx2.lineDashOffset = -0;
+            ctx2.drawImage(canvas, 0, 0, canvas.width / 4, canvas.height / 4);
+            ctx2.strokeRect(0, 0, canvas.width / 4, canvas.height / 4)
+
+            
+           
+
+
+        });
+
+
+
+
+        
+
 
     }
 </script>
